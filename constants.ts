@@ -63,12 +63,6 @@ export const INITIAL_UPGRADES: Upgrade[] = [
   }
 ];
 
-export const ORACLE_COSTS = {
-  WISDOM: 50,
-  NAME: 100,
-  STORY: 500
-};
-
 export const COLOR_PALETTE = {
   bg: 'bg-[#f9f8f2]',
   primary: 'bg-[#89c965]', // Clover Green

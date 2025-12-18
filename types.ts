@@ -1,3 +1,4 @@
+
 export interface Upgrade {
   id: string;
   name: string;
@@ -14,6 +15,9 @@ export interface GameState {
   totalPurrs: number;
   clickCount: number;
   startTime: number;
+  combo: number;
+  multiplier: number;
+  isFeverMode: boolean;
 }
 
 export interface FloatingText {
@@ -21,10 +25,11 @@ export interface FloatingText {
   x: number;
   y: number;
   text: string;
+  isFever?: boolean;
 }
 
 export enum OracleMode {
-  WISDOM = 'WISDOM',
-  NAME = 'NAME',
-  STORY = 'STORY'
+  WISDOM = 'wisdom',
+  NAME = 'name',
+  STORY = 'story'
 }

@@ -1,58 +1,38 @@
-import { GoogleGenAI } from "@google/genai";
+
+import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { OracleMode } from "../types";
 
-// Safer access to process.env for browser environments
-const getApiKey = () => {
-  try {
-    if (typeof process !== 'undefined' && process.env) {
-      return process.env.API_KEY || '';
-    }
-  } catch (e) {
-    // Ignore error if process is not defined
-  }
-  return '';
-};
-
-const apiKey = getApiKey();
-
-// Initialize Gemini client only if key exists
-const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
-
-export const getOracleWisdom = async (mode: OracleMode): Promise<string> => {
-  if (!ai) {
-    return "The Oracle is sleeping (Missing API Key).";
-  }
-
+export async function getOracleWisdom(mode: OracleMode): Promise<string> {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  
   let prompt = "";
-  let systemInstruction = "You are a mystical, wise, and slightly sassy cat oracle. You speak in cat puns and refer to humans as 'servants' or 'can openers'. Keep responses short (under 30 words).";
-
   switch (mode) {
     case OracleMode.WISDOM:
-      prompt = "Give me a piece of profound cat wisdom or life advice based on cat behavior.";
+      prompt = "Give me a short, 1-sentence mystical and cute piece of wisdom from a Zen Master Cat. Keep it under 20 words.";
       break;
     case OracleMode.NAME:
-      prompt = "Generate a unique, cute, or funny name for a new kitten joining the colony.";
+      prompt = "Suggest a grand but cute mystical name for a cat hero, including a title (e.g., 'Luna, The Midnight Prowler'). Just the name, no extra text.";
       break;
     case OracleMode.STORY:
-      prompt = "Tell a very short (2 sentence) micro-story about a legendary cat hero.";
+      prompt = "Tell a very short (2 sentences) legend about an ancient cat deity who protected the first clover. Be poetic and cute.";
       break;
     default:
-      prompt = "Meow.";
+      prompt = "Meow something mystical!";
   }
 
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+    const response: GenerateContentResponse = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
       contents: prompt,
       config: {
-        systemInstruction: systemInstruction,
-        temperature: 0.9,
-      }
+        temperature: 0.8,
+        topP: 0.95,
+      },
     });
 
-    return response.text || "Meow? (The spirits are silent)";
+    return response.text?.trim() || "The spirits of the cat dimension are silent... Meow.";
   } catch (error) {
-    console.error("Gemini API Error:", error);
-    return "Hiss! (The connection to the spirit realm failed)";
+    console.error("Gemini Oracle Error:", error);
+    return "A cloud of catnip obscures my vision... Try again later.";
   }
-};
+}
