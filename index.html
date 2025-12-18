@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kitty Clicker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;600&display=swap');
+      
+      body {
+        font-family: 'Fredoka', sans-serif;
+        background-color: #f9f8f2; /* Natural Paper Beige */
+        color: #5d5555; /* Warm Dark Grey */
+      }
+      
+      /* Custom bounce animation for click */
+      @keyframes pop {
+        0% { transform: scale(1); }
+        50% { transform: scale(0.95); }
+        100% { transform: scale(1); }
+      }
+      
+      .click-anim:active {
+        animation: pop 0.1s ease-in-out;
+      }
+
+      /* Idle Breathing Animation */
+      @keyframes breathe {
+        0%, 100% { transform: scale(1) translateY(0); }
+        50% { transform: scale(1.02) translateY(-5px); }
+      }
+      
+      .animate-breathe {
+        animation: breathe 4s ease-in-out infinite;
+      }
+
+      /* Success Pop for upgrades */
+      @keyframes successPop {
+        0% { transform: scale(1); background-color: white; }
+        50% { transform: scale(1.02); background-color: #f1f8e9; }
+        100% { transform: scale(1); background-color: white; }
+      }
+
+      .animate-success-pop {
+        animation: successPop 0.3s ease-out;
+      }
+
+      /* Floating text animation */
+      @keyframes floatUp {
+        0% { opacity: 1; transform: translateY(0); }
+        100% { opacity: 0; transform: translateY(-50px); }
+      }
+      .floating-text {
+        animation: floatUp 1s ease-out forwards;
+        pointer-events: none;
+      }
+      
+      /* Custom scrollbar for that natural look */
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background-color: #cbd5e1;
+        border-radius: 20px;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "lucide-react": "https://esm.sh/lucide-react@^0.561.0",
+    "@google/genai": "https://esm.sh/@google/genai@^1.34.0",
+    "recharts": "https://esm.sh/recharts@^3.6.0"
+  }
+}
+</script>
+</head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
