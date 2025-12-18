@@ -27,9 +27,3 @@ export interface FloatingText {
   text: string;
   isFever?: boolean;
 }
-
-export enum OracleMode {
-  WISDOM = 'wisdom',
-  NAME = 'name',
-  STORY = 'story'
-}
