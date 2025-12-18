@@ -25,17 +25,14 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          # Removed cache: 'npm' to allow build without package-lock.json
+          # Cache removed to fix initial build failure
       
-      # Generates package-lock.json if it doesn't exist, otherwise installs from it
       - name: Install dependencies
         run: npm install
       
       - name: Build
         run: npm run build
         env:
-          # Critical: Injects the secret from GitHub Settings into the build process
-          # so vite.config.ts can replace process.env.API_KEY with the actual value.
           API_KEY: ${{ secrets.API_KEY }}
       
       - name: Upload artifact
