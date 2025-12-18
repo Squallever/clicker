@@ -25,7 +25,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: 'npm'
+          # Removed cache: 'npm' to allow build without package-lock.json
       
       # Generates package-lock.json if it doesn't exist, otherwise installs from it
       - name: Install dependencies
