@@ -1,14 +1,16 @@
+
 import React from 'react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface StatsPanelProps {
   totalPurrs: number;
   clickCount: number;
+  pettingPurrs: number;
   startTime: number;
   history: { time: number; purrs: number }[];
 }
 
-export const StatsPanel: React.FC<StatsPanelProps> = ({ totalPurrs, clickCount, startTime, history }) => {
+export const StatsPanel: React.FC<StatsPanelProps> = ({ totalPurrs, clickCount, pettingPurrs, startTime, history }) => {
   const elapsed = Math.max(1, Math.floor((Date.now() - startTime) / 1000));
   
   return (
@@ -18,7 +20,7 @@ export const StatsPanel: React.FC<StatsPanelProps> = ({ totalPurrs, clickCount, 
       <div className="grid grid-cols-2 gap-4 mb-6">
         <div className="bg-[#f1f8e9] p-4 rounded-xl border border-[#dcedc8]">
           <p className="text-xs text-[#558b2f] uppercase tracking-wider font-semibold">Total Clover</p>
-          <p className="text-xl font-bold text-[#33691e] mt-1">{totalPurrs.toLocaleString()}</p>
+          <p className="text-xl font-bold text-[#33691e] mt-1">{Math.floor(totalPurrs).toLocaleString()}</p>
         </div>
         <div className="bg-[#fff3e0] p-4 rounded-xl border border-[#ffe0b2]">
           <p className="text-xs text-[#ef6c00] uppercase tracking-wider font-semibold">Taps</p>
@@ -27,6 +29,10 @@ export const StatsPanel: React.FC<StatsPanelProps> = ({ totalPurrs, clickCount, 
         <div className="bg-[#e0f2f1] p-4 rounded-xl border border-[#b2dfdb]">
           <p className="text-xs text-[#00695c] uppercase tracking-wider font-semibold">Journey Time</p>
           <p className="text-xl font-bold text-[#004d40] mt-1">{elapsed}s</p>
+        </div>
+        <div className="bg-[#fce4ec] p-4 rounded-xl border border-[#f8bbd0]">
+          <p className="text-xs text-[#c2185b] uppercase tracking-wider font-semibold">Love Earned</p>
+          <p className="text-xl font-bold text-[#ad1457] mt-1">{Math.floor(pettingPurrs).toLocaleString()}</p>
         </div>
       </div>
 

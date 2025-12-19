@@ -13,7 +13,11 @@
         font-family: 'Fredoka', sans-serif;
         background-color: #f9f8f2; /* Natural Paper Beige */
         color: #5d5555; /* Warm Dark Grey */
+        cursor: pointer; /* Change default cursor to finger as requested */
       }
+      
+      /* Ensure text selection areas revert to text cursor or default if needed, 
+         but user requested 'page pointer style to finger', so we keep it pointer mostly. */
       
       /* Custom bounce animation for click */
       @keyframes pop {
@@ -94,6 +98,25 @@
       .floating-text {
         animation: floatUp 1s ease-out forwards;
         pointer-events: none;
+      }
+
+      /* Heart Float animation for petting */
+      @keyframes floatHeart {
+        0% { opacity: 0; transform: translateY(0) scale(0.5); }
+        20% { opacity: 1; transform: translateY(-10px) scale(1.2); }
+        100% { opacity: 0; transform: translateY(-40px) scale(1); }
+      }
+      .animate-float-heart {
+        animation: floatHeart 1s ease-out forwards;
+      }
+
+      /* Click Ripple Animation */
+      @keyframes rippleEffect {
+        0% { transform: scale(0); opacity: 0.8; }
+        100% { transform: scale(2.5); opacity: 0; }
+      }
+      .animate-ripple {
+        animation: rippleEffect 0.6s cubic-bezier(0, 0.2, 0.8, 1) forwards;
       }
       
       /* Custom scrollbar for that natural look */

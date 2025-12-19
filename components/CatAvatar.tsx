@@ -1,22 +1,48 @@
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { Upgrade } from '../types';
 
 interface CatAvatarProps {
   onClick: (e: React.MouseEvent<HTMLDivElement>) => void;
+  onStroke: (e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => void;
   upgrades: Upgrade[];
   isFever: boolean;
   pps: number;
   feverMultiplier: number;
+  canPet: boolean;
 }
 
 type IdleState = 'breathe' | 'stretching' | 'grooming' | 'playing';
 
-export const CatAvatar: React.FC<CatAvatarProps> = ({ onClick, upgrades, isFever, pps, feverMultiplier }) => {
+interface HeartParticle {
+  id: number;
+  x: number;
+  y: number;
+}
+
+interface Ripple {
+  id: number;
+  x: number;
+  y: number;
+}
+
+export const CatAvatar: React.FC<CatAvatarProps> = ({ onClick, onStroke, upgrades, isFever, pps, feverMultiplier, canPet }) => {
   const [isBlinking, setIsBlinking] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
+  const [isGrabbing, setIsGrabbing] = useState(false); // Controls the cursor style (Palm)
   const [idleState, setIdleState] = useState<IdleState>('breathe');
+  const [hearts, setHearts] = useState<HeartParticle[]>([]);
+  const [ripples, setRipples] = useState<Ripple[]>([]);
   
+  // Refs for throttling stroke events and cursor logic
+  const lastStrokeTime = useRef<number>(0);
+  const strokeDistance = useRef<number>(0);
+  const lastMousePos = useRef<{x: number, y: number} | null>(null);
+  
+  // Refs for cursor delay/drag logic
+  const pressTimer = useRef<any>(null);
+  const startDragPos = useRef<{x: number, y: number} | null>(null);
+
   const hasHat = upgrades.some(u => u.id === 'straw_hat' && u.count > 0);
 
   // Blinking logic
@@ -45,6 +71,106 @@ export const CatAvatar: React.FC<CatAvatarProps> = ({ onClick, upgrades, isFever
     return () => clearTimeout(timeoutId);
   }, []);
 
+  // Mouse Down Handler: Starts the timer for "Grab" cursor
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    setIsPressed(true);
+    startDragPos.current = { x: e.clientX, y: e.clientY };
+    
+    // Only change to "Palm" cursor if held down for 150ms
+    if (pressTimer.current) clearTimeout(pressTimer.current);
+    pressTimer.current = setTimeout(() => {
+      setIsGrabbing(true);
+    }, 150);
+  };
+
+  // Mouse Up Handler: Resets states and adds Ripple effect
+  const handleMouseUp = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Add ripple effect
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    const newRipple = { id: Date.now() + Math.random(), x, y };
+    setRipples(prev => [...prev, newRipple]);
+    setTimeout(() => {
+      setRipples(prev => prev.filter(r => r.id !== newRipple.id));
+    }, 600); // Match animation duration
+
+    setIsPressed(false);
+    setIsGrabbing(false);
+    if (pressTimer.current) clearTimeout(pressTimer.current);
+    startDragPos.current = null;
+  };
+
+  // Handle Stroking Logic
+  const handleMove = (e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
+    // Only allow petting if pressed (for mouse) or always for touch (implicit)
+    const isTouch = 'touches' in e;
+    if (!isTouch && !isPressed) return;
+
+    let clientX, clientY;
+    if ('touches' in e) {
+       clientX = e.touches[0].clientX;
+       clientY = e.touches[0].clientY;
+    } else {
+       clientX = (e as React.MouseEvent).clientX;
+       clientY = (e as React.MouseEvent).clientY;
+    }
+
+    // Logic to switch to "Grab" cursor immediately if dragged
+    if (isPressed && !isGrabbing && !isTouch && startDragPos.current) {
+      const dx = clientX - startDragPos.current.x;
+      const dy = clientY - startDragPos.current.y;
+      // If moved more than 10px, assume it's a pet/drag action, not a click
+      if (Math.sqrt(dx * dx + dy * dy) > 10) {
+        setIsGrabbing(true);
+        if (pressTimer.current) clearTimeout(pressTimer.current);
+      }
+    }
+
+    if (!canPet) return;
+
+    const now = Date.now();
+    
+    if (lastMousePos.current) {
+      // Calculate distance moved for stroke mechanism
+      const dx = clientX - lastMousePos.current.x;
+      const dy = clientY - lastMousePos.current.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      
+      strokeDistance.current += dist;
+
+      // Threshold: Must move at least 20px total and 50ms must have passed since last register
+      if (strokeDistance.current > 20 && now - lastStrokeTime.current > 50) {
+        onStroke(e);
+        lastStrokeTime.current = now;
+        strokeDistance.current = 0;
+
+        // Add visual heart
+        const rect = e.currentTarget.getBoundingClientRect();
+        const x = clientX - rect.left;
+        const y = clientY - rect.top;
+        
+        const newHeart = { id: Math.random(), x, y };
+        setHearts(prev => [...prev, newHeart]);
+        setTimeout(() => {
+          setHearts(prev => prev.filter(h => h.id !== newHeart.id));
+        }, 1000);
+      }
+    }
+
+    lastMousePos.current = { x: clientX, y: clientY };
+  };
+
+  const handleLeave = () => {
+    setIsPressed(false);
+    setIsGrabbing(false);
+    if (pressTimer.current) clearTimeout(pressTimer.current);
+    lastMousePos.current = null;
+    strokeDistance.current = 0;
+    startDragPos.current = null;
+  };
+
   const isExcited = pps > 50 || isFever || idleState === 'playing';
 
   const bodyAnimClass = useMemo(() => {
@@ -61,12 +187,46 @@ export const CatAvatar: React.FC<CatAvatarProps> = ({ onClick, upgrades, isFever
 
   return (
     <div 
-      onMouseDown={() => setIsPressed(true)}
-      onMouseUp={() => setIsPressed(false)}
-      onMouseLeave={() => setIsPressed(false)}
+      onMouseDown={handleMouseDown}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleLeave}
+      onMouseMove={handleMove}
+      onTouchMove={handleMove}
       onClick={onClick}
-      className={`cursor-pointer w-64 h-64 md:w-80 md:h-80 relative select-none transition-transform duration-75 ${isPressed ? 'scale-95' : 'scale-100'}`}
+      onDragStart={(e) => e.preventDefault()}
+      className={`
+        w-64 h-64 md:w-80 md:h-80 relative select-none transition-transform duration-75 
+        ${isGrabbing ? 'cursor-grab active:cursor-grab' : 'cursor-pointer'}
+        ${isPressed ? 'scale-95' : 'scale-100'}
+      `}
     >
+      {/* Ripple Effects */}
+      {ripples.map(r => (
+        <div 
+          key={r.id}
+          className="absolute rounded-full border-2 border-orange-300 pointer-events-none animate-ripple z-30"
+          style={{ 
+            left: r.x, 
+            top: r.y,
+            width: '40px',
+            height: '40px',
+            marginTop: '-20px',
+            marginLeft: '-20px'
+          }}
+        />
+      ))}
+
+      {/* Visual Heart Particles */}
+      {hearts.map(h => (
+        <div 
+          key={h.id}
+          className="absolute text-pink-400 text-xl pointer-events-none animate-float-heart z-20"
+          style={{ left: h.x, top: h.y }}
+        >
+          ❤️
+        </div>
+      ))}
+
       <div className={`w-full h-full transition-all duration-300 ${bodyAnimClass}`}>
         <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" className="overflow-visible">
           {/* Background Aura */}
@@ -86,9 +246,8 @@ export const CatAvatar: React.FC<CatAvatarProps> = ({ onClick, upgrades, isFever
           />
           
           {/* Ears - Rendered BEFORE the head so they appear naturally attached behind it */}
-          {/* Made significantly smaller as requested */}
           <g>
-            {/* Left Ear - Smaller, tip lowered to y=28, width reduced */}
+            {/* Left Ear */}
             <path 
               d="M 42 80 Q 28 55 38 28 Q 65 38 85 48" 
               fill="#fff1cc" stroke="#d4a373" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" 
@@ -96,7 +255,7 @@ export const CatAvatar: React.FC<CatAvatarProps> = ({ onClick, upgrades, isFever
             {/* Left Ear Inner */}
             <path d="M 48 72 Q 42 55 46 38 Q 65 50 75 58" fill="#ffab91" opacity="0.6" />
             
-            {/* Right Ear - Smaller, tip lowered to y=28, width reduced */}
+            {/* Right Ear */}
             <path 
               d="M 158 80 Q 172 55 162 28 Q 135 38 115 48" 
               fill="#fff1cc" stroke="#d4a373" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" 
@@ -105,10 +264,10 @@ export const CatAvatar: React.FC<CatAvatarProps> = ({ onClick, upgrades, isFever
             <path d="M 152 72 Q 158 55 154 38 Q 135 50 125 58" fill="#ffab91" opacity="0.6" />
           </g>
 
-          {/* Body Base (Head) - Rendered AFTER ears to cover the attachment points */}
+          {/* Body Base (Head) */}
           <circle cx="100" cy="110" r="70" fill="#fff1cc" stroke="#d4a373" strokeWidth="2" />
           
-          {/* Eyes - Fever mode eyes perfectly centered on default eye positions */}
+          {/* Eyes */}
           {isBlinking ? (
             <>
               <path d="M69 100 L81 100" stroke="#5d4037" strokeWidth="3" strokeLinecap="round" />
@@ -116,28 +275,9 @@ export const CatAvatar: React.FC<CatAvatarProps> = ({ onClick, upgrades, isFever
             </>
           ) : isFever ? (
             <>
-              {/* Star eyes perfectly centered at 75,100 and 125,100 */}
               <g filter="drop-shadow(0 0 2px rgba(255,152,0,0.5))">
-                <text 
-                  x="75" y="100" 
-                  fontSize="28" 
-                  textAnchor="middle" 
-                  dominantBaseline="central"
-                  fill="#ff9800" 
-                  stroke="#fff" 
-                  strokeWidth="1.5"
-                  style={{ pointerEvents: 'none' }}
-                >✨</text>
-                <text 
-                  x="125" y="100" 
-                  fontSize="28" 
-                  textAnchor="middle" 
-                  dominantBaseline="central"
-                  fill="#ff9800" 
-                  stroke="#fff" 
-                  strokeWidth="1.5"
-                  style={{ pointerEvents: 'none' }}
-                >✨</text>
+                <text x="75" y="100" fontSize="28" textAnchor="middle" dominantBaseline="central" fill="#ff9800" stroke="#fff" strokeWidth="1.5" style={{ pointerEvents: 'none' }}>✨</text>
+                <text x="125" y="100" fontSize="28" textAnchor="middle" dominantBaseline="central" fill="#ff9800" stroke="#fff" strokeWidth="1.5" style={{ pointerEvents: 'none' }}>✨</text>
               </g>
             </>
           ) : (

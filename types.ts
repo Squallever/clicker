@@ -14,6 +14,7 @@ export interface GameState {
   purrs: number;
   totalPurrs: number;
   clickCount: number;
+  pettingPurrs: number; // Lifetime score from petting
   startTime: number;
   combo: number;
   multiplier: number;
